@@ -104,6 +104,40 @@ def plot_mean_field_validation(xx, tt, U, final_state, sigma_fun, sigma_argmax):
     plt.savefig(save_path, bbox_inches="tight")
     
     #plt.show()
+def save_data_convergence(M_list,tt,xx,U):
+
+    results_list = [] # Usaremos una lista de diccionarios (muy eficiente)
+
+    for i in range(R):
+        rng_seed = np.random.default_rng(child_seeds[i])
+        for j, M_val in enumerate(M_list):
+            x0_M = rng_seed.uniform(x_min, x_max, size=M_val)
+            
+            # Ejecución de la dinámica
+            pop_history = run_ces_1d(tt, x0_M, sigma_1, a, c, alpha)
+            
+            # Cálculo del error
+            err_val = error(pop_history, U, tt, xx)
+            
+            # GUARDADO ESTRUCTURADO: Cada punto es una fila clara
+            results_list.append({
+                "seed": i,
+                "M": M_val,
+                "error_W1": err_val
+            })
+            
+        print(f"Progress: Seed {i+1}/{R} completed.")    
+
+    # Convertir a DataFrame
+    df_results = pd.DataFrame(results_list)
+
+    # Guardar en Parquet (Mucho más seguro y comprimido)
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    
+    df_results.to_parquet("data/convergence_results.parquet")
+
+    return df_results
 
 def plot_convergence_error(df, R):
     """
@@ -141,6 +175,20 @@ def plot_convergence_error(df, R):
     
     plt.savefig("figures/Error_mean_field_convergence.pdf", bbox_inches="tight")
     plt.show()
+
+def eigenfunction_concentration(c_list,sigma):
+    x_list = []
+    eigen_vals_list = []
+    eigen_vecs_list = []
+    for c in c_list:
+        x, eigen_vecs, eigen_vals = run_semi_class(a, c, sigma, nx=400, xmin=x_min, xmax=x_max, neigen=1, normalize=True)
+        eigen_vecs = np.abs(eigen_vecs.flatten())
+        dx = x[1]-x[0]
+        norm = -eigen_vals[0]/ np.trapezoid(a*sigma(x)*np.abs(eigen_vecs), x, dx) # normalización
+        x_list.append(x)
+        eigen_vals_list.append(eigen_vals)
+        eigen_vecs_list.append(eigen_vecs)
+    return x_list, eigen_vals_list, eigen_vecs_list
 
 def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun, sigma_argmax):
     """
@@ -256,47 +304,17 @@ if __name__ == "__main__":
         dt=0.001, renormalize=False
     )
 
-    #final_state = run_ces_1d(T, x0, sigma_1, a, c, alpha)
+    final_state = run_ces_1d(T, x0, sigma_1, a, c, alpha)
 
-    #plot_mean_field_validation(xx, tt, U, final_state, sigma_1, sigma_1_argmax)
+    plot_mean_field_validation(xx, tt, U, final_state, sigma_1, sigma_1_argmax)
 
-    #print("Figure 1a Finish")
+    print("Figure 1a Finish")
 
     # --- Execute Figure 1(b): Convergence Analysis ---
     
     M_list = np.unique(np.logspace(2, 5, 50).astype(int))
 
-    results_list = [] # Usaremos una lista de diccionarios (muy eficiente)
-
-    for i in range(R):
-        rng_seed = np.random.default_rng(child_seeds[i])
-        for j, M_val in enumerate(M_list):
-            x0_M = rng_seed.uniform(x_min, x_max, size=M_val)
-            
-            # Ejecución de la dinámica
-            pop_history = run_ces_1d(tt, x0_M, sigma_1, a, c, alpha)
-            
-            # Cálculo del error
-            err_val = error(pop_history, U, tt, xx)
-            
-            # GUARDADO ESTRUCTURADO: Cada punto es una fila clara
-            results_list.append({
-                "seed": i,
-                "M": M_val,
-                "error_W1": err_val
-            })
-            
-        print(f"Progress: Seed {i+1}/{R} completed.")    
-
-    # Convertir a DataFrame
-    df_results = pd.DataFrame(results_list)
-
-    # Guardar en Parquet (Mucho más seguro y comprimido)
-    if not os.path.exists("data"):
-        os.makedirs("data")
-    
-    df_results.to_parquet("data/convergence_results.parquet")
-    print("Datos guardados exitosamente en data/convergence_results.parquet")
+    df_results=save_data_convergence(M_list, tt, xx, U)
 
     # df_results= pd.read_parquet("~/data/convergence_results.parquet")
     plot_convergence_error(df_results, R)
@@ -306,45 +324,17 @@ if __name__ == "__main__":
 
     c_list = 4*np.logspace(-8, 2, 100)
 
-    x_list = []
-    eigen_vals_list = []
-    eigen_vecs_list = []
-    for c in c_list:
-        x, eigen_vecs, eigen_vals = run_semi_class(a, c, sigma_1, nx=400, xmin=x_min, xmax=x_max, neigen=1, normalize=True)
-        eigen_vecs = np.abs(eigen_vecs.flatten())
-        dx = x[1]-x[0]
-        norm = -eigen_vals[0]/ np.trapezoid(a*sigma_1(x)*np.abs(eigen_vecs), x, dx) # normalización
-        x_list.append(x)
-        eigen_vals_list.append(eigen_vals)
-        eigen_vecs_list.append(eigen_vecs)
+    x_list, eigen_vals_list, eigen_vecs_list = eigenfunction_concentration(c_list, sigma_1)
     
     plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_1, sigma_1_argmax)
     print("Figure 2 Finish")
     # plot_eigenvalue_stability(c_list, eigen_vals_list) # Uncomment to verify lambda_1 < 0
 
     c_list=[0.04]
-    x_list = []
-    eigen_vals_list = []
-    eigen_vecs_list = []
-    x, eigen_vecs, eigen_vals = run_semi_class(a, c_list[0], sigma_2, nx=400, xmin=-2.0, xmax=2.0, neigen=1, normalize=True)
-    eigen_vecs = np.abs(eigen_vecs.flatten())
-    dx = x[1]-x[0]
-    norm = -eigen_vals[0]/ np.trapezoid(a*sigma_2(x)*np.abs(eigen_vecs), x, dx)
-    x_list.append(x)
-    eigen_vals_list.append(eigen_vals)
-    eigen_vecs_list.append(eigen_vecs)
+    x_list, eigen_vals_list, eigen_vecs_list = eigenfunction_concentration(c_list, sigma_2)
     plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_2, sigma_2_argmax)
     print("Figure 3 Finish")
 
-    x_list = []
-    eigen_vals_list = []
-    eigen_vecs_list = []
-    x, eigen_vecs, eigen_vals = run_semi_class(a, c_list[0], sigma_3, nx=400, xmin=-2.0, xmax=2.0, neigen=1, normalize=True)
-    eigen_vecs = np.abs(eigen_vecs.flatten())
-    dx = x[1]-x[0]
-    norm = -eigen_vals[0]/ np.trapezoid(a*sigma_3(x)*np.abs(eigen_vecs), x, dx)
-    x_list.append(x)
-    eigen_vals_list.append(eigen_vals)
-    eigen_vecs_list.append(eigen_vecs)
+    x_list, eigen_vals_list, eigen_vecs_list = eigenfunction_concentration(c_list, sigma_3)
     plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_3, sigma_3_argmax)
     print("Figure 4 Finish")
