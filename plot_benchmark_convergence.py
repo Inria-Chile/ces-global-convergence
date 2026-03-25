@@ -82,7 +82,6 @@ def plot_from_history(df,d,case):
 
     if not os.path.exists("figures"):
         os.makedirs("figures")
-    
     plt.savefig(f'figures/final_convergence_d{d}_{case}.pdf', dpi=300)
     #plt.show()
 
