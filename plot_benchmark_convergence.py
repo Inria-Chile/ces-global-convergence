@@ -50,6 +50,8 @@ def save_convergence_data(d, R, case="uniform", filename=None):
 
     df = pd.DataFrame(all_data)
     fname = filename or f"data/history_convergence_d{d}_{case}.parquet"
+    if not os.path.exists("data"):
+        os.makedirs("data")
     df.to_parquet(fname)
     print(f"Done! Data saved to {fname}")
     return df
@@ -77,10 +79,13 @@ def plot_from_history(df,d,case):
     plt.legend()
     plt.xlabel("Time $t$")
     plt.ylabel("$L_2$ Error")
+
+    if not os.path.exists("figures"):
+        os.makedirs("figures")
     
     # Guardar PDF
     plt.savefig(f'figures/final_convergence_d{d}_{case}.pdf', dpi=300)
-    plt.show()
+    #plt.show()
 
 
 if __name__ == "__main__":
