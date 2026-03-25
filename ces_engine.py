@@ -109,7 +109,6 @@ def selection_mutation_step_1d(x_prev, sigma, a, c, alpha, xmin=-2.0, xmax=2.0):
 
     x_sel, idx = selection_1d(x_prev, weights)
 
-    # Mutación
     x_next = sample_neumann_heat(c*t_M, x_sel, xmin=xmin, xmax=xmax)
 
     return x_next
@@ -151,11 +150,9 @@ def run_ces_1d(t, x0, sigma, a, c, alpha, xmin=-2.0, xmax=2.0):
     """
     M = len(x0)
     
-    # Check if 't' is a single value (scalar) or a collection (array/list)
     is_scalar = np.isscalar(t)
     
     if is_scalar:
-        # Single point in time: we only care about the final N
         N_final = int(np.floor((M**alpha) * t))
         values = selection_mutation_iterator_1d(
             x0, sigma, a, c, alpha, N_final, 
@@ -163,8 +160,6 @@ def run_ces_1d(t, x0, sigma, a, c, alpha, xmin=-2.0, xmax=2.0):
         )
         return values
     else:
-        # Collection of times: we need the full history
-        # We convert time points to discrete iteration steps
         N_steps = np.floor((M**alpha) * t).astype(int)
         N_max = int(np.max(N_steps))
         
@@ -186,13 +181,12 @@ def heat_kernel_neumann(t, x, y, N=200000, xmin=-2.0, xmax=2.0):
     bx, by = np.broadcast_arrays(x, y)
 
 
-    N_array = np.arange(-N, N + 1, dtype=float)  # (2K+1,)
+    N_array = np.arange(-N, N + 1, dtype=float)  
 
     denom = np.sqrt(4.0 * np.pi * t)
 
-    # z1 = (x-y) + 2nL
     z1 = (bx - by)[..., None] + 2.0 * L * N_array
-    # z2 = (x+y-2xmin) + 2nL
+
     z2 = (bx + by - 2.0 * xmin)[..., None] + 2.0 * L * N_array
 
     g1 = np.exp(-(z1 * z1) / (4.0 * t)) / denom
@@ -233,7 +227,6 @@ def run_semi_class(a, c, sigma, nx=200, xmin=0.0, xmax=1.0, neigen=1, normalize=
 def cdf_sample(points, sample):
     x = np.sort(np.asarray(sample).ravel())
     n = x.size
-    # count = # {x_i <= t} via searchsorted
     count = np.searchsorted(x, points, side="right")
     return count / n
 
@@ -254,11 +247,11 @@ def error(pop, U, tt, xx):
     dt = tt[1]-tt[0]
     T = tt[-1]
     N = len(tt)
-    w_distances = np.array([np.trapezoid(np.abs(cdf_density(xx, U[n])-cdf_sample(xx, pop[n])), xx, dx) for n in range(N)]) # Calculamos distancia de Wasserstein
-    error_L1  = (1/T)*np.trapezoid(w_distances, tt, dt) # Calculamos norma L^1 en tiempo (y promediamos)
+    w_distances = np.array([np.trapezoid(np.abs(cdf_density(xx, U[n])-cdf_sample(xx, pop[n])), xx, dx) for n in range(N)])
+    error_L1  = (1/T)*np.trapezoid(w_distances, tt, dt) 
     return error_L1
 
-# --- 
+# --- CES R^d
 
 def selection_rd(x, prob):
     M = x.shape[0]
@@ -276,11 +269,11 @@ def selection_mutation_step_rd(x_prev, sigma_fun, a, c, alpha):
     a_M = a / (M**alpha)
     t_M = 1.0 / (M**alpha)
 
-    s = sigma_fun(x_prev)                 # esperado shape (M,)
+    s = sigma_fun(x_prev)                
     s = np.asarray(s, dtype=float).reshape(M)
 
-    z = -a_M * s          # exponentes (vector)
-    z = z - np.max(z)            # estabilización: shift
+    z = -a_M * s         
+    z = z - np.max(z)           
     w_M = np.exp(z)
     weights = w_M / np.sum(w_M)
 
@@ -315,7 +308,7 @@ def selection_mutation_iterator_rd(x0, sigma_fun, a, c, alpha, N, save_times=Non
         if idx == L:
             break
 
-    return np.stack(markov_chain, axis=0)   # shape (len(save_times), M, d)
+    return np.stack(markov_chain, axis=0)   
 
 
 def run_ces_rd(t, x0, sigma_fun, a, c, alpha):
@@ -347,17 +340,16 @@ def consensus_point(X, f, beta):
     v_f = sum_i x_i exp(-beta f(x_i)) / sum_i exp(-beta f(x_i))
     usando estabilización numérica (log-sum-exp).
     """
-    fvals = _eval_f(f, X)  # (N,)
+    fvals = _eval_f(f, X)  
     logw = -beta * fvals
     shift = np.max(logw)
     w = np.exp(logw - shift)
     w_sum = np.sum(w)
     if not np.isfinite(w_sum):
-        # fallback: pesos uniformes si todo falló numéricamente
         w = np.ones(X.shape[0], dtype=float) / X.shape[0]
     else:
         w = w / w_sum
-    c = w @ X  # (d,)
+    c = w @ X  
     return c, fvals, w
 
 
@@ -420,26 +412,22 @@ def cbo(
                 }
             )
 
-    # estado inicial
     c, fvals, _ = consensus_point(X, f, beta)
     maybe_save(0, c, fvals)
 
     for k in range(1, n_steps + 1):
         c, fvals, _ = consensus_point(X, f, beta)
 
-        diff = X - c  # (N,d)
-        norms = np.linalg.norm(diff, axis=1)  # (N,)
+        diff = X - c  
+        norms = np.linalg.norm(diff, axis=1)  
 
-        # ruido: |x_i - c| * W_i
         W_i = rng.standard_normal(size=(N, d))
         noise = (norms[:, None]) * W_i
 
-        # update
         X = X - lam * dt * diff + sigma * sqrt_dt * noise
 
         maybe_save(k, c, fvals)
 
-    # último consenso
     c, fvals, _ = consensus_point(X, f, beta)
 
     return X, c, history
@@ -448,7 +436,6 @@ def sgd_ackley(x0, lr, n_steps, a=20.0, b=0.2, c=2.0*np.pi):
     """
     Minimización de la función Ackley usando SGD estándar.
     """
-    # Definición compatible con Autograd para el gradiente
     def ackley_autograd(x):
         d = x.shape[0]
         mean_sq = anp.mean(x**2)
@@ -457,14 +444,12 @@ def sgd_ackley(x0, lr, n_steps, a=20.0, b=0.2, c=2.0*np.pi):
         term2 = -anp.exp(mean_cos)
         return term1 + term2 + a + anp.e
 
-    # Precomputar la función del gradiente
     grad_f = grad(ackley_autograd)
     
-    # x debe ser un vector (d,)
     x = np.array(x0, dtype=float).copy()
     
     for _ in range(n_steps):
         g = grad_f(x)
-        x = x - lr * g  # Paso de descenso
+        x = x - lr * g  
         
     return x

@@ -79,15 +79,13 @@ def plot_mean_field_validation(xx, tt, U, final_state, sigma_fun, sigma_argmax):
     ax2.tick_params(axis='y', labelcolor='gray')
     ax2.set_ylim(0, np.max(sigma_fun(xx)) * 1.3) 
 
-    # --- 3. References: Global Maxima (The requested generalization) ---
-    # Handle multiple argmax for symmetric branching or multi-modal cases
     if not isinstance(sigma_argmax, (list, np.ndarray)):
         argmax_list = [sigma_argmax]
     else:
         argmax_list = sigma_argmax
 
     for k, pos in enumerate(argmax_list):
-        label_m = "Global Maxima" if k == 0 else None # Avoid duplicate legend entries
+        label_m = "Global Maxima" if k == 0 else None 
         ax1.axvline(pos, lw=1.5, color="#d62728", ls="--", label=label_m, zorder=6)
 
     plt.title("CES Mass Transport vs. Replicator-Mutator PDE")
@@ -106,20 +104,17 @@ def plot_mean_field_validation(xx, tt, U, final_state, sigma_fun, sigma_argmax):
     #plt.show()
 def save_data_convergence(M_list,tt,xx,U):
 
-    results_list = [] # Usaremos una lista de diccionarios (muy eficiente)
+    results_list = []
 
     for i in range(R):
         rng_seed = np.random.default_rng(child_seeds[i])
         for j, M_val in enumerate(M_list):
             x0_M = rng_seed.uniform(x_min, x_max, size=M_val)
             
-            # Ejecución de la dinámica
             pop_history = run_ces_1d(tt, x0_M, sigma_1, a, c, alpha)
             
-            # Cálculo del error
             err_val = error(pop_history, U, tt, xx)
             
-            # GUARDADO ESTRUCTURADO: Cada punto es una fila clara
             results_list.append({
                 "seed": i,
                 "M": M_val,
@@ -128,10 +123,8 @@ def save_data_convergence(M_list,tt,xx,U):
             
         print(f"Progress: Seed {i+1}/{R} completed.")    
 
-    # Convertir a DataFrame
     df_results = pd.DataFrame(results_list)
 
-    # Guardar en Parquet (Mucho más seguro y comprimido)
     if not os.path.exists("data"):
         os.makedirs("data")
     
@@ -145,15 +138,12 @@ def plot_convergence_error(df, R):
     No more dimension errors!
     """
 
-    # 1. Agrupar por M para calcular media y desviación estándar
-    # Esto maneja automáticamente cualquier número de semillas por M
     stats = df.groupby("M")["error_W1"].agg(["mean", "std"]).reset_index()
     
     M_val = stats["M"].values
     mean_err = stats["mean"].values
     std_err = stats["std"].values
 
-    # --- Configuración del Gráfico ---
     plt.figure(figsize=(8, 5))
     
     plt.fill_between(M_val, mean_err - std_err, mean_err + std_err, 
@@ -161,7 +151,6 @@ def plot_convergence_error(df, R):
     
     plt.plot(M_val, mean_err, 'o-', color="#1f77b4", lw=2, markersize=4, label="Mean $W_1$ error")
 
-    # Referencia Teórica O(M^-0.5)
     theoretical = mean_err[0] * (M_val[0]/M_val)**0.5
     plt.plot(M_val, theoretical, 'k--', alpha=0.5, label=r"$\mathcal{O}(M^{-1/2})$")
 
@@ -205,7 +194,6 @@ def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun,
     ax1 = plt.gca()
     ax2 = ax1.twinx()
     
-    # --- 1. Background: Fitness Landscape ---
     xx = np.linspace(np.min(x_list[0]), np.max(x_list[0]), 500)
     yy = sigma_fun(xx)
     ax2.fill_between(xx, yy, alpha=0.18, color='gray', label=r"Fitness $\sigma(x)$ shape")
@@ -214,15 +202,10 @@ def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun,
     ax2.set_ylabel(r"Fitness Landscape $\sigma(x)$", color=color_axis_sec, fontsize=11)
     ax2.tick_params(axis='y', colors=color_axis_sec)
     ax2.spines['right'].set_color(color_axis_sec)
-    # AJUSTE CLAVE: Usamos el maximo real para el limite superior
     ax2.set_ylim(0, np.max(yy) * 1.3)
 
-    # --- 2. Primary Data: Eigenfunctions ---
-    # RECUPERAMOS TU LÓGICA ORIGINAL: n%10 == 0 and n >= 50
     if isinstance(c_list, (list, np.ndarray)) and len(c_list) > 1:
-        # Original logic for Figure 2 (Parameter Sweep)
         indices = [n for n in range(len(c_list)) if n % 10 == 0 and n >= 50]
-        # Safety check: if the filter leaves us empty, take at least the last one
         if not indices:
             indices = [len(c_list) - 1]
         colors = cm.viridis(np.linspace(0, 0.85, len(indices)))
@@ -237,12 +220,9 @@ def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun,
                      color=colors[i], 
                      lw=2.2, zorder=5)
     else:
-        # Logic for Figure 3 (Single c, fixed mutation)
         indices = [0]
         ax1.plot(x_list[0], eigen_vecs_list[0], color='#1f77b4', lw=3, label=r"$\phi_1(x)$ ($c=0.04$)", zorder=5)
 
-    # --- 3. References: Global Maxima ---
-    # Generalización para uno o varios argmax
     if not isinstance(sigma_argmax, (list, np.ndarray)):
         argmax_list = [sigma_argmax]
     else:
@@ -252,7 +232,6 @@ def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun,
         label_m = "Global Maximum" if k == 0 else None
         ax1.axvline(pos, lw=1.5, color="#d62728", ls="--", label=label_m, zorder=6)
 
-    # --- 4. Styling ---
     ax1.set_xlabel(r"$x$", fontsize=12)
     ax1.set_ylabel(r"Principal Eigenfunction $\phi_1(x)$", fontsize=12)
     if len(c_list)>1:
@@ -261,7 +240,6 @@ def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun,
         ax1.set_title(f"Concentration of $\phi_1$ for fixed $c={c_list[0]}$", fontsize=14, pad=20)
     ax1.grid(True, ls=":", alpha=0.3)
 
-    # Combinar leyendas sin sombra (como en el original)
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
     ax1.legend(h1 + h2, l1 + l2, loc='upper right', fontsize=12, frameon=True, shadow=False)
@@ -287,7 +265,6 @@ def plot_eigenvalue_stability(c_vals, eigen_vals_list):
     plt.ylabel(r"Principal Eigenvalue $\lambda_1$")
     plt.title("Spectral Stability Validation")
     plt.grid(True, alpha=0.3)
-    # No lo guardamos por defecto para no llenar de archivos al usuario
     #plt.show()
 
 # --- Execution Block ---

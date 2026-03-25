@@ -84,6 +84,6 @@ def plot_from_history(df,d,case):
 
 
 if __name__ == "__main__":
-    #df=save_convergence_data(d=30, R=30, case="shifted")
-    df=pd.read_parquet("/home/matiasneto/git/Repo-AE/data/history_convergence_d30_shifted.parquet")
+    df=save_convergence_data(d=30, R=30, case="shifted")
+    #df=pd.read_parquet("~/data/history_convergence_d30_shifted.parquet")
     plot_from_history(df,d=30,case="Shifted")
