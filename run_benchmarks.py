@@ -94,7 +94,18 @@ def to_latex_scientific_compact(val, std):
 
     return f"${fmt_latex(val)}~(\pm~{fmt_latex(std)})$"
 
-def generate_full_paper_table(df_uni, df_shi, filename="tables/final_results.tex"):
+# Diccionario auxiliar para transformar números a texto en LaTeX (los comandos no aceptan números)
+def num_to_word(n):
+    mapping = {1: 'One', 2: 'Two', 10: 'Ten', 30: 'Thirty'}
+    return mapping.get(n, str(n))
+
+def clean_method_name(m):
+    if 'CES' in m: return 'CES'
+    if 'CBO' in m: return 'CBO'
+    if 'SGD' in m: return 'SGD'
+    return m.replace(' ', '')
+
+def generate_full_paper_table(df_uni, df_shi, table_filename="tables/final_results.tex", vars_filename="tables/variables.tex"):
     df_uni['Scenario'] = 'Uniform'
     df_shi['Scenario'] = 'Shifted'
     df = pd.concat([df_uni, df_shi])
@@ -110,6 +121,9 @@ def generate_full_paper_table(df_uni, df_shi, filename="tables/final_results.tex
     methods = ['CES (Ours)', 'CBO', 'SGD']
     
     latex = []
+    macros = [] # Lista para guardar los \newcommand
+    
+    # --- Inicio de la Tabla ---
     latex.append(r"\begin{table}[tb]")
     latex.append(r"\centering")
     latex.append(r"\caption{Benchmark Performance: Mean $L_2$ Error $\pm$ SD and Success Rate (SR).}")
@@ -134,10 +148,19 @@ def generate_full_paper_table(df_uni, df_shi, filename="tables/final_results.tex
             
             row_str += f" & $d={d}$"
             
+            # Determinar el mejor método para ponerlo en negrita en la tabla
             row_means = {m: pivot.loc[(scenario, d), ('Mean', m)] for m in methods if not pd.isna(pivot.loc[(scenario, d), ('Mean', m)])}
             best_method = min(row_means, key=row_means.get) if row_means else None
 
             for m in methods:
+                # Nombres limpios para el comando LaTeX
+                m_clean = clean_method_name(m)
+                scen_clean = scenario[:3] # 'Uni' o 'Shi'
+                d_word = num_to_word(d)
+                
+                cmd_err = f"\\err{m_clean}{scen_clean}{d_word}"
+                cmd_sr = f"\\sr{m_clean}{scen_clean}{d_word}"
+
                 try:
                     m_mean = pivot.loc[(scenario, d), ('Mean', m)]
                     m_std = pivot.loc[(scenario, d), ('Std', m)]
@@ -146,14 +169,20 @@ def generate_full_paper_table(df_uni, df_shi, filename="tables/final_results.tex
                     if pd.isna(m_mean):
                         row_str += " & -- & --"
                     else:
-                        err_str = to_latex_scientific_compact(m_mean, m_std)
-                        sr_str = f"{m_sr*100:.0f}\\%"
+                        # 1. Generar los strings numéricos crudos
+                        # (Asumo que to_latex_scientific_compact ya está definida en tu código)
+                        raw_err = to_latex_scientific_compact(m_mean, m_std)
+                        raw_sr = f"{m_sr*100:.0f}\\%"
                         
+                        # 2. Agregar a la lista de Macros
+                        macros.append(f"\\newcommand{{{cmd_err}}}{{{raw_err}}}")
+                        macros.append(f"\\newcommand{{{cmd_sr}}}{{{raw_sr}}}")
+                        
+                        # 3. Construir la celda de la tabla USANDO los macros
                         if m == best_method:
-                            err_str = f"\\textbf{{{err_str}}}"
-                            sr_str = f"\\textbf{{{sr_str}}}"
-                            
-                        row_str += f" & {err_str} & {sr_str}"
+                            row_str += f" & \\textbf{{{cmd_err}}} & \\textbf{{{cmd_sr}}}"
+                        else:
+                            row_str += f" & {cmd_err} & {cmd_sr}"
                 except KeyError:
                     row_str += " & -- & --"
             
@@ -168,21 +197,27 @@ def generate_full_paper_table(df_uni, df_shi, filename="tables/final_results.tex
     latex.append(r"}")
     latex.append(r"\end{table}")
 
-    final_latex_code = "\n".join(latex)
-
-    if not os.path.exists(os.path.dirname(filename)):
-        os.makedirs(os.path.dirname(filename))
+    # --- Guardar Archivos ---
+    if not os.path.exists(os.path.dirname(table_filename)):
+        os.makedirs(os.path.dirname(table_filename))
         
-    with open(filename, "w") as f:
-        f.write(final_latex_code)
+    # Guardar Tabla
+    with open(table_filename, "w") as f:
+        f.write("\n".join(latex))
+        
+    # Guardar Variables (eliminar duplicados por si acaso)
+    unique_macros = list(dict.fromkeys(macros))
+    with open(vars_filename, "w") as f:
+        f.write("% --- Variables auto-generadas desde Python ---\n")
+        f.write("\n".join(unique_macros))
     
-    return final_latex_code
+    return "\n".join(latex), "\n".join(unique_macros)
 
 if __name__ == "__main__":
     df_uniform = run_benchmarks_production(R=30, dimensions=[1, 2, 10, 30], case="uniform", threshold=1e-2)
     df_shifted = run_benchmarks_production(R=30, dimensions=[1, 2, 10, 30], case="shifted", threshold=1e-2)
     #df_uniform = pd.read_parquet("~/data/benchmarks_final_uniform.parquet")
     #df_shifted = pd.read_parquet("~/data/benchmarks_final_shifted.parquet")
-    table_code=generate_full_paper_table(df_uniform, df_shifted, filename="tables/final_results.tex")
-
+    table_code, variables_code =generate_full_paper_table(df_uniform, df_shifted)
     #print(table_code)
+    #print(variables_code)
