@@ -16,8 +16,7 @@ This project implements the **Canonical Evolutionary Strategy (CES)**, a global 
 * `/ces_engine.py`: Main algorithm logic.
 * `/plot_theory_figures.py`: Mathematical validation plots.
 * `/plot_mass_transport.py`: 1D and 2D mass transport visualizations.
-* `/run_benchmarks_pro.py`: High-performance simulation suite.
-* `/generate_paper_table.py`: Pipeline for LaTeX table generation.
+* `/run_benchmarks.py`: High-performance simulation suite.
 * `/data/`: (Stored in Parquet) Raw simulation results.
 
 ## 🛠 Installation & Usage
