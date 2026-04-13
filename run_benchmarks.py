@@ -9,7 +9,6 @@ from utils import ackley
 ss = np.random.SeedSequence(master_seed+1000)
 
 
-
 # Hyperparameters ES
 a = 40.0
 c = 4e-2
@@ -94,7 +93,6 @@ def to_latex_scientific_compact(val, std):
 
     return f"${fmt_latex(val)}~(\pm~{fmt_latex(std)})$"
 
-# Diccionario auxiliar para transformar números a texto en LaTeX (los comandos no aceptan números)
 def num_to_word(n):
     mapping = {1: 'One', 2: 'Two', 10: 'Ten', 30: 'Thirty'}
     return mapping.get(n, str(n))
@@ -121,9 +119,8 @@ def generate_full_paper_table(df_uni, df_shi, table_filename="tables/final_resul
     methods = ['CES (Ours)', 'CBO', 'SGD']
     
     latex = []
-    macros = [] # Lista para guardar los \newcommand
+    macros = [] 
     
-    # --- Inicio de la Tabla ---
     latex.append(r"\begin{table}[tb]")
     latex.append(r"\centering")
     latex.append(r"\caption{Benchmark Performance: Mean $L_2$ Error $\pm$ SD and Success Rate (SR).}")
@@ -148,14 +145,12 @@ def generate_full_paper_table(df_uni, df_shi, table_filename="tables/final_resul
             
             row_str += f" & $d={d}$"
             
-            # Determinar el mejor método para ponerlo en negrita en la tabla
             row_means = {m: pivot.loc[(scenario, d), ('Mean', m)] for m in methods if not pd.isna(pivot.loc[(scenario, d), ('Mean', m)])}
             best_method = min(row_means, key=row_means.get) if row_means else None
 
             for m in methods:
-                # Nombres limpios para el comando LaTeX
                 m_clean = clean_method_name(m)
-                scen_clean = scenario[:3] # 'Uni' o 'Shi'
+                scen_clean = scenario[:3] 
                 d_word = num_to_word(d)
                 
                 cmd_err = f"\\err{m_clean}{scen_clean}{d_word}"
@@ -169,16 +164,12 @@ def generate_full_paper_table(df_uni, df_shi, table_filename="tables/final_resul
                     if pd.isna(m_mean):
                         row_str += " & -- & --"
                     else:
-                        # 1. Generar los strings numéricos crudos
-                        # (Asumo que to_latex_scientific_compact ya está definida en tu código)
                         raw_err = to_latex_scientific_compact(m_mean, m_std)
                         raw_sr = f"{m_sr*100:.0f}\\%"
                         
-                        # 2. Agregar a la lista de Macros
                         macros.append(f"\\newcommand{{{cmd_err}}}{{{raw_err}}}")
                         macros.append(f"\\newcommand{{{cmd_sr}}}{{{raw_sr}}}")
                         
-                        # 3. Construir la celda de la tabla USANDO los macros
                         if m == best_method:
                             row_str += f" & \\textbf{{{cmd_err}}} & \\textbf{{{cmd_sr}}}"
                         else:
@@ -197,15 +188,12 @@ def generate_full_paper_table(df_uni, df_shi, table_filename="tables/final_resul
     latex.append(r"}")
     latex.append(r"\end{table}")
 
-    # --- Guardar Archivos ---
     if not os.path.exists(os.path.dirname(table_filename)):
         os.makedirs(os.path.dirname(table_filename))
         
-    # Guardar Tabla
     with open(table_filename, "w") as f:
         f.write("\n".join(latex))
         
-    # Guardar Variables (eliminar duplicados por si acaso)
     unique_macros = list(dict.fromkeys(macros))
     with open(vars_filename, "w") as f:
         f.write("% --- Variables auto-generadas desde Python ---\n")

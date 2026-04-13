@@ -26,29 +26,7 @@ x0 = rng.uniform(-2.0, 2.0, size=M) #Fixed initial condition
 # --- Plot Functions
 
 def plot_mean_field_validation(xx, tt, U, final_state, sigma_fun, sigma_argmax):
-    """
-    Generates the visual validation of the Mean-Field Limit (Figure 1a).
-    
-    This function compares the empirical distribution of the particle-based CES 
-    against the deterministic solution of the Replicator-Mutator PDE, 
-    demonstrating the mass transport toward the global optimum.
-    
-    Parameters:
-    -----------
-    xx : ndarray
-        Spatial grid defined in the bounded domain [xmin, xmax].
-    tt : ndarray
-        Time vector from the numerical PDE solver.
-    U : ndarray
-        Numerical solution matrix (time x space) of the Replicator-Mutator PDE.
-    final_state : ndarray
-        Array containing the final positions of the M individuals in the CES population.
-    sigma_fun : function
-        The fitness landscape function (e.g., sigma_1) used for selection.
-    time_idx : int, optional
-        The specific time index to visualize (default corresponds to T_final).
-    """
-    
+
     plt.rcParams.update({
         "text.usetex": False,     
         "mathtext.fontset": "stix", 
@@ -133,10 +111,6 @@ def save_data_convergence(M_list,tt,xx,U):
     return df_results
 
 def plot_convergence_error(df, R):
-    """
-    Reads structured data from Parquet and plots convergence.
-    No more dimension errors!
-    """
 
     stats = df.groupby("M")["error_W1"].agg(["mean", "std"]).reset_index()
     
@@ -180,9 +154,6 @@ def eigenfunction_concentration(c_list,sigma):
     return x_list, eigen_vals_list, eigen_vecs_list
 
 def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun, sigma_argmax):
-    """
-    Fixed Version: Matches the Jupyter notebook's visual output exactly.
-    """
     plt.rcParams.update({
         "text.usetex": False,     
         "mathtext.fontset": "stix", 
@@ -253,10 +224,6 @@ def plot_eigenfunction_concentration(x_list, eigen_vecs_list, c_list, sigma_fun,
     plt.savefig(f"figures/eigenvec_concentration_{suffix}.pdf", bbox_inches="tight")
     #plt.show()
 def plot_eigenvalue_stability(c_vals, eigen_vals_list):
-    """
-    Optional plot: Verifies the stability condition (lambda_1 < 0).
-    Not included in the paper, but used for theoretical validation.
-    """
     plt.figure(figsize=(7, 4))
     plt.plot(c_vals, eigen_vals_list, 'o-', color='darkgreen', markersize=3)
     plt.axhline(0, color='red', linestyle='--')

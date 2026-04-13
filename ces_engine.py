@@ -54,7 +54,6 @@ def sol_rep_mutador(
     def add_diffusion_rhs(q):
         return P @ q
 
-    # Time loop
     nsteps = int(np.ceil(T / dt))
     tt = np.linspace(0.0, nsteps * dt, nsteps + 1)
     U = np.zeros((nsteps + 1, nx))
@@ -144,10 +143,6 @@ def selection_mutation_iterator_1d(x0, sigma, a, c, alpha, N, save_times=None, x
 
 
 def run_ces_1d(t, x0, sigma, a, c, alpha, xmin=-2.0, xmax=2.0):
-    """
-    Advanced CES 1D Runner. 
-    Handles both single time (final state) and array of times (history).
-    """
     M = len(x0)
     
     is_scalar = np.isscalar(t)
@@ -260,11 +255,6 @@ def selection_rd(x, prob):
 
 
 def selection_mutation_step_rd(x_prev, sigma_fun, a, c, alpha):
-    """
-    x_prev: shape (M, d)
-    sigma_fun: R^d -> R, pero vectorizada: recibe (M,d) y retorna (M,)
-              (o puedes adaptar abajo con np.apply_along_axis)
-    """
     M = x_prev.shape[0]
     a_M = a / (M**alpha)
     t_M = 1.0 / (M**alpha)
@@ -322,8 +312,6 @@ def run_ces_rd(t, x0, sigma_fun, a, c, alpha):
 
     return selection_mutation_iterator_rd(x0, sigma_fun, a, c, alpha, N_max, save_times=N)
 
-#CBO
-
 def _eval_f(f, X):
     try:
         vals = f(X)
@@ -336,10 +324,6 @@ def _eval_f(f, X):
 
 
 def consensus_point(X, f, beta):
-    """
-    v_f = sum_i x_i exp(-beta f(x_i)) / sum_i exp(-beta f(x_i))
-    usando estabilización numérica (log-sum-exp).
-    """
     fvals = _eval_f(f, X)  
     logw = -beta * fvals
     shift = np.max(logw)
@@ -363,39 +347,6 @@ def cbo(
     beta,
     save_every=None,
 ):
-    """
-    Consensus Based Optimization (CBO) — esquema discreto:
-
-        x_i <- x_i - lam*dt*(x_i - v_f) + sigma*sqrt(dt)*|x_i - v_f)| * W_i
-
-    donde W_i ~ N(0, I_d) i.i.d. y |.| es la norma euclidiana.
-
-    Parámetros
-    ----------
-    f : callable
-        Función objetivo a MINIMIZAR.
-    X0 : array (N,d)
-        Población inicial.
-    n_steps : int
-        Número de iteraciones.
-    dt : float
-        Paso temporal.
-    lam : float
-        Intensidad del drift hacia el consenso.
-    sigma : float
-        Intensidad del ruido.
-    beta : float
-        Parámetro de “soft-min” en el consenso.
-    save_every : int o None
-        Si es int, guarda historia cada `save_every` pasos.
-
-    Retorna
-    -------
-    out : X, c, history
-          X: población final (N,d),
-          c: último consenso (d,),
-          history: lista con snapshots (si save_every no es None)
-    """
     X = np.asarray(X0, dtype=float).copy()
     N, d = X.shape
 
@@ -433,9 +384,6 @@ def cbo(
     return X, c, history
 
 def sgd_ackley(x0, lr, n_steps, a=20.0, b=0.2, c=2.0*np.pi):
-    """
-    Minimización de la función Ackley usando SGD estándar.
-    """
     def ackley_autograd(x):
         d = x.shape[0]
         mean_sq = anp.mean(x**2)
