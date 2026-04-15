@@ -17,11 +17,6 @@ sigma_3_argmax=[-1.0, 0.0, 1.0]
 # --- Benchmark Function
 
 def ackley(x, a=20.0, b=0.2, c=2.0*np.pi):
-    """
-    Ackley d-dimensional (forma estándar).
-    f(x) = -a*exp(-b*sqrt((1/d)*sum x_i^2)) - exp((1/d)*sum cos(c*x_i)) + a + e
-    Global min: x=0, f(0)=0.
-    """
     x = np.asarray(x, dtype=float)
     if x.ndim == 1:
         x = x[None, :]
