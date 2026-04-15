@@ -24,7 +24,6 @@ sigma_CBO = c
 beta =  40.0
 
 def save_convergence_data(d, R, case="uniform", filename=None):
-    """Ejecuta la simulación y guarda la historia temporal en un Parquet."""
     t_grid = np.linspace(0, Tf, n_steps_CBO + 1)
     all_data = []
     x_opt = np.zeros(d)
@@ -58,7 +57,6 @@ def save_convergence_data(d, R, case="uniform", filename=None):
     
 
 def plot_from_history(df,d,case):
-    """Carga el Parquet y genera el gráfico de convergencia."""
 
     stats = df.groupby(['Method', 'Time'])['Error'].agg(['mean', 'std']).reset_index()
 

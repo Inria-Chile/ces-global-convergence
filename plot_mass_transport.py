@@ -38,13 +38,11 @@ def simulation(d,mu=2.0,sigma_init=0.5):
     x0_sgd = np.mean(x0, axis=0) 
     sol_SGD = sgd_ackley(x0_sgd, lr, n_steps_SGD) 
     return final_state, pob_CBO, sol_SGD
+
 # ---  Plot functions
 
 def plot_ackley_1d_validation(final_state, pob_CBO, sol_SGD):
-    """
-    Generates the 1D Ackley validation plot (Figure 1).
-    
-    """
+
     def ackley_1d(x):
         return -20 * np.exp(-0.2 * np.abs(x)) - \
                np.exp(np.cos(2 * np.pi * x)) + 20 + np.e
@@ -92,12 +90,7 @@ def plot_ackley_1d_validation(final_state, pob_CBO, sol_SGD):
     
     # plt.show()
 def plot_ackley_2d_validation(final_state, pob_CBO, sol_SGD):
-    """
-    Generates the 2D Ackley validation plot (Figure 2).
-    
-    Uses rasterization for the complex contour background to maintain 
-    performance while keeping scatter points as high-quality vectors.
-    """
+
     def ackley_2d(x, y):
         term1 = -20 * np.exp(-0.2 * np.sqrt(0.5 * (x**2 + y**2)))
         term2 = -np.exp(0.5 * (np.cos(2 * np.pi * x) + np.cos(2 * np.pi * y)))

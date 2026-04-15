@@ -147,7 +147,7 @@ def eigenfunction_concentration(c_list,sigma):
         x, eigen_vecs, eigen_vals = run_semi_class(a, c, sigma, nx=400, xmin=x_min, xmax=x_max, neigen=1, normalize=True)
         eigen_vecs = np.abs(eigen_vecs.flatten())
         dx = x[1]-x[0]
-        norm = -eigen_vals[0]/ np.trapezoid(a*sigma(x)*np.abs(eigen_vecs), x, dx) # normalización
+        norm = -eigen_vals[0]/ np.trapezoid(a*sigma(x)*np.abs(eigen_vecs), x, dx) 
         x_list.append(x)
         eigen_vals_list.append(eigen_vals)
         eigen_vecs_list.append(eigen_vecs)
