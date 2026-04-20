@@ -33,6 +33,7 @@ If you use this code in your research, please cite our paper:
 @misc{ces2026global,
   title={From Mean-Field Limits to Semiclassical Concentration: Global Convergence of the Canonical Evolutionary Strategy},
   author={Neto, Mat{\'\i}as and Garay, Nicolas and Mart{\'\i}, Luis and Sanchez-Pi, Nayat},
-  journal={arXiv preprint / PPSN 2026},
+  journal={arXiv preprint},
+  note={Submitted to PPSN 2026}
   year={2026},
 }
