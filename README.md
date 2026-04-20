@@ -1,7 +1,7 @@
 # Global Convergence of the Canonical Evolutionary Strategy
 
 This repository contains the official implementation and numerical experiments for the paper:
-**"Global Convergence of the Canonical Evolutionary Strategy: From Mean-Field Limits to Semiclassical Concentration"** (2026).
+**"From Mean-Field Limits to Semiclassical Concentration: Global Convergence of the Canonical Evolutionary Strategy"** (2026).
 
 ## 📋 Overview
 This project implements the **Canonical Evolutionary Strategy (CES)**, a global optimization framework. We provide the tools to reproduce the theoretical validation and the benchmark results presented in the paper.
@@ -30,8 +30,8 @@ This project implements the **Canonical Evolutionary Strategy (CES)**, a global 
 ## 🎓 Citation
 If you use this code in your research, please cite our paper:
 ```bibtex
-@article{ces2026global,
-  title={Global Convergence of the Canonical Evolutionary Strategy: From Mean-Field Limits to Semiclassical Concentration},
+@misc{ces2026global,
+  title={From Mean-Field Limits to Semiclassical Concentration: Global Convergence of the Canonical Evolutionary Strategy},
   author={Neto, Mat{\'\i}as and Garay, Nicolas and Mart{\'\i}, Luis and Sanchez-Pi, Nayat},
   journal={arXiv preprint / PPSN 2026},
   year={2026},
